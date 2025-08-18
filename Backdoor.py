@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket # Provides low-level networking interfaces. It allows you to create and manage network connections using protocols like TCP and UDP.
 import time # Provides various functions for working with time-related operations.
 import subprocess # Allows use to run system commands or external programs from your Python script.
