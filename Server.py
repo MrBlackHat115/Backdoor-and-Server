@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket # Provides low-level networking interfaces. It allows you to create and manage network connections using protocols like TCP and UDP.
 import json # Used for storing and transferring data between the browser and the server.
 import os # Import the os module for interacting with the file system.
