@@ -40,3 +40,14 @@ Both the Server and Backdoor projects have been updated to support the following
 2. **Screenshot Command**: This command can capture the screen, encode the image in Base64 format, and send it to the server user. The server then saves the screenshot locally.
 
 3. **Record Command**: This command enables screen recording to a temporary file, which is sent to the server when the recording is stopped. The server now properly manages the metadata and saves the recording in a designated local folder.
+
+## Required Python Libraries
+
+Install the following new libraries on the **victim machine**:
+
+```bash
+pip install mss
+pip install Pillow
+pip install numpy
+pip install opencv-python
+pip install pyautogui
