@@ -1,3 +1,4 @@
+# Server and Backdoor 
 This project contains a Python backdoor and server script that work together to establish a remote connection between a target machine and an operator. The backdoor runs on the target, connecting back to the server, which listens for incoming connections. 
 Once connected, the server can send commands to the backdoor, which executes them on the target and returns the output.
 
@@ -30,3 +31,12 @@ Instructions:
 
 
 Once it connects, the server will show: [+] Connection established with <target_ip>
+
+# Server and Backdoor update (10/25/2025):
+Both the Server and Backdoor projects have been updated to support the following functionalities:
+
+1. **Info Command**: This command allows users to quickly retrieve information about the target machine.
+
+2. **Screenshot Command**: This command can capture the screen, encode the image in Base64 format, and send it to the server user. The server then saves the screenshot locally.
+
+3. **Record Command**: This command enables screen recording to a temporary file, which is sent to the server when the recording is stopped. The server now properly manages the metadata and saves the recording in a designated local folder.
